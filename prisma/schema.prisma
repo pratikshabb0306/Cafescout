@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum NoiseLevel {
+  QUIET
+  MODERATE
+  LIVELY
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  createdAt DateTime   @default(now())
+  reviews   Review[]
+  favorites Favorite[]
+}
+
+model Cafe {
+  id          String     @id @default(cuid())
+  name        String
+  address     String
+  latitude    Float
+  longitude   Float
+  hasWifi     Boolean    @default(false)
+  hasOutlets  Boolean    @default(false)
+  noiseLevel  NoiseLevel @default(MODERATE)
+  seatingCount Int       @default(0)
+  priceLevel  Int        @default(2) // 1-4, like $ to $$$$
+  openTime    String? // e.g. "07:00"
+  closeTime   String? // e.g. "20:00"
+  photoUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  reviews   Review[]
+  favorites Favorite[]
+
+  @@index([latitude, longitude])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  cafe   Cafe   @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  cafeId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@index([cafeId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  cafe   Cafe   @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  cafeId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@unique([userId, cafeId])
+}
